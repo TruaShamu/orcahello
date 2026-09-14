@@ -21,9 +21,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - solution: ModeratorFrontEnd/AIForOrcas/AIForOrcas.sln
+          - solution: ModeratorFrontEnd/AIForOrcas/AIForOrcas.slnx
             dotnet-version: 6.0.x
-          - solution: ModeratorFrontEnd/OrcaHello/OrcaHello.sln
+          - solution: ModeratorFrontEnd/OrcaHello/OrcaHello.slnx
             dotnet-version: 8.0.x
     steps:
       - uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c  # v2.21.0
