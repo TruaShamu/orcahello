@@ -164,6 +164,7 @@ changed to add the app host.
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - A container runtime (Docker Desktop or Podman) for the Azurite emulator container
+- [Azure Functions Core Tools v4](https://learn.microsoft.com/azure/azure-functions/functions-run-local) (`func`) on your `PATH` — the Aspire Functions integration uses it to launch the Functions host
 
 ### Run
 
