@@ -148,6 +148,47 @@ Create local.settings.json in the current directory (NotificationSystem) using t
 }
 ```
 
+## Local development with .NET Aspire (optional)
+
+A [.NET Aspire](https://learn.microsoft.com/dotnet/aspire/) app host is provided in
+`NotificationSystem.AppHost` to simplify running the Functions app locally. It starts the
+isolated-worker Functions host together with an [Azurite](https://learn.microsoft.com/azure/storage/common/storage-use-azurite)
+storage emulator and the Aspire dashboard (structured logs, distributed traces and metrics)
+from a single command — no live Azure storage account or shared credentials needed for the
+Functions host storage.
+
+The Functions app (`NotificationSystem`) is orchestrated as-is; no application code was
+changed to add the app host.
+
+### Prerequisites
+
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- A container runtime (Docker Desktop or Podman) for the Azurite emulator container
+
+### Run
+
+```bash
+cd NotificationSystem/NotificationSystem.AppHost
+dotnet run
+```
+
+Then open the Aspire dashboard URL printed in the console to view resources, logs and traces.
+
+### Scope and follow-ups
+
+This app host is intentionally minimal — it wires up the Functions **host storage**
+(`AzureWebJobsStorage`) via Azurite. The application's own bindings are not yet pointed at
+emulators, so you still supply these through `local.settings.json` / user-secrets as described
+in [Run Locally](#run-locally):
+
+- `OrcaNotificationStorageSetting` — the `srkwfound` queue and `EmailList` table
+- `aifororcasmetadatastore_DOCUMENTDB` — the Cosmos DB change-feed triggers
+- AWS SES credentials and `SenderEmail`
+
+Natural next steps are to add a Cosmos DB emulator resource and map the storage/queue/table
+connections to Azurite so the full detection→notification pipeline runs locally end-to-end,
+and optionally a `ServiceDefaults` project for shared OpenTelemetry configuration.
+
 ## Run on Azure
 
 1. Go to the "orcanotification" function app (link 3 above). 
@@ -160,6 +201,7 @@ The directories in this system are organized as follows:
 
 * img: Contains images used in this README
 * NotificationSystem: Contains the source code for the Azure functions
+* NotificationSystem.AppHost: .NET Aspire app host for running the Functions app locally (see [Local development with .NET Aspire](#local-development-with-net-aspire-optional))
 * NotificationSystem.Tests.Unit: Contains unit tests
 * NotificationSystem.Tests.Integration: Contains integration tests
 * PostBackfillToOrcasite: Contains a console app to post the history of machine detections to the Orcasite detection API
