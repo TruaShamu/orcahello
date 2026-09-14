@@ -203,8 +203,14 @@ emulator: the AWS SES credentials (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
 `SenderEmail` used to send moderator/subscriber email, plus the Orcasite settings
 (`ORCASITE_HOSTNAME`, `ORCASITE_APIKEY`).
 
-An optional natural next step is a `ServiceDefaults` project for shared OpenTelemetry
-configuration.
+### Telemetry (`ServiceDefaults`)
+
+The `NotificationSystem.ServiceDefaults` project provides a shared `AddServiceDefaults()`
+call (wired into the Functions app's host builder) that enables OpenTelemetry logging,
+metrics and tracing exported over OTLP. The Aspire app host injects the
+`OTEL_EXPORTER_OTLP_*` environment variables automatically, so traces and metrics flow into
+the Aspire dashboard with no extra configuration; in a deployed environment the same
+variables can point at a real collector.
 
 ## Run on Azure
 
