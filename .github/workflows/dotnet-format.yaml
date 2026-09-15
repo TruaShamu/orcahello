@@ -34,6 +34,10 @@ jobs:
       - name: Set up .NET Core
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68  # v6.0.0
         with:
-          dotnet-version: ${{ matrix.dotnet-version }}
+          # .slnx solution files require the .NET SDK 9.0.200 or later, so install
+          # a 9.0.x SDK in addition to the project's target-framework SDK.
+          dotnet-version: |
+            ${{ matrix.dotnet-version }}
+            9.0.x
       - name: Format check
         run: dotnet format ${{ matrix.solution }} --verify-no-changes
