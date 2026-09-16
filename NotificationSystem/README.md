@@ -198,11 +198,22 @@ pipeline runs end-to-end with no live Azure:
 - `aifororcasmetadatastore_DOCUMENTDB` → the Cosmos DB emulator (`predictions/metadata`
   change-feed triggers)
 
-The only settings you still supply through `local.settings.json` / user-secrets (see
-[Run Locally](#run-locally)) are those that target a live external service with no local
-emulator: the AWS SES credentials (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) and
-`SenderEmail` used to send moderator/subscriber email, plus the Orcasite settings
-(`ORCASITE_HOSTNAME`, `ORCASITE_APIKEY`).
+The only settings you still supply yourself are those that target a live external service
+with no local emulator: the AWS SES credentials (`AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY`) and `SenderEmail` used to send moderator/subscriber email, plus
+the Orcasite settings (`ORCASITE_HOSTNAME`, `ORCASITE_APIKEY`). Set them on the
+`NotificationSystem.AppHost` project via user-secrets (or environment variables) and the
+app host forwards any that are present into the Functions process:
+
+```bash
+cd NotificationSystem/NotificationSystem.AppHost
+dotnet user-secrets set "AWS_ACCESS_KEY_ID" "<key>"
+dotnet user-secrets set "AWS_SECRET_ACCESS_KEY" "<secret>"
+dotnet user-secrets set "SenderEmail" "<email address>"
+```
+
+Settings that are not set are simply omitted, so email/Orcasite calls fail only if you
+actually exercise those code paths without supplying them.
 
 An optional natural next step is a `ServiceDefaults` project for shared OpenTelemetry
 configuration.
