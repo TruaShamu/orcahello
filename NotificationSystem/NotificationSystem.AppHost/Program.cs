@@ -48,7 +48,7 @@ var cosmos = builder.AddAzureCosmosDB("aifororcasmetadatastore")
 #pragma warning restore ASPIRECOSMOSDB001
 
 var predictions = cosmos.AddCosmosDatabase("predictions");
-predictions.AddContainer("metadata", "/source_guid");
+var metadata = predictions.AddContainer("metadata", "/source_guid");
 
 // The emulator's gateway presents a self-signed TLS certificate that the host machine
 // does not trust, so the Functions Cosmos change-feed listener must be told to skip
@@ -62,13 +62,38 @@ var cosmosConnection = ReferenceExpression.Create(
 // than WithReference(...), so Aspire has no implicit dependency edge to the emulators.
 // Wait for both explicitly: the Cosmos change-feed listener does not reliably recover if
 // the Functions host starts before the emulator gateway is accepting connections, which
-// leaves the "leases" container (and therefore every trigger) uncreated.
-builder.AddAzureFunctionsProject<Projects.NotificationSystem>("notificationsystem")
+// leaves the "leases" container (and therefore every trigger) uncreated. Wait on the
+// "metadata" container rather than the Cosmos emulator resource so the host only starts
+// after the "predictions" database and "metadata" container have been provisioned —
+// otherwise the change-feed triggers can register against a database that does not exist
+// yet.
+var functions = builder.AddAzureFunctionsProject<Projects.NotificationSystem>("notificationsystem")
     .WithHostStorage(storage)
     .WithEnvironment("OrcaNotificationStorageSetting", storageConnection)
     .WithEnvironment("aifororcasmetadatastore_DOCUMENTDB", cosmosConnection)
     .WaitFor(storage)
-    .WaitFor(cosmos);
+    .WaitFor(metadata);
+
+// Forward the optional live-service settings (AWS SES + Orcasite) into the Functions
+// process when supplied to the app host through user-secrets or environment variables.
+// These target external services with no local emulator, so they are only forwarded when
+// present; without this the app host would only inject the two emulator connection
+// strings and the README's user-secrets guidance would never reach the worker.
+foreach (var key in new[]
+{
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "SenderEmail",
+    "ORCASITE_HOSTNAME",
+    "ORCASITE_APIKEY",
+})
+{
+    var value = builder.Configuration[key];
+    if (!string.IsNullOrEmpty(value))
+    {
+        functions.WithEnvironment(key, value);
+    }
+}
 
 // Provision the app's own storage objects in Azurite once the emulator is ready. The
 // queue/table bindings connect to but do not create these, and (unlike Cosmos databases
@@ -91,8 +116,8 @@ builder.Eventing.Subscribe<ResourceReadyEvent>(storage.Resource, async (@event, 
         .CreateTableIfNotExistsAsync("EmailList", cancellationToken);
 });
 
-// Remaining follow-up (out of scope here): AWS SES credentials + SenderEmail are still
-// supplied via user-secrets / local.settings.json, since they target a live external
-// service with no local emulator.
+// AWS SES credentials, SenderEmail and the Orcasite settings target live external
+// services with no local emulator; they are forwarded above from the app host's
+// user-secrets / environment configuration when present.
 
 builder.Build().Run();
